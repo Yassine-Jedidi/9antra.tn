@@ -5,24 +5,36 @@ const Contact = () => {
         <h2 className="text-3xl font-bold text-center mb-8">Contact Us</h2>
         <form className="space-y-6">
           <div>
+            <label htmlFor="name" className="font-bold uppercase">
+              Name
+            </label>
             <input
               type="text"
+              id="name"
               placeholder="Jiara Martins"
-              className="w-full p-4 rounded-[108px]"
+              className="w-full p-3 rounded-[108px] mt-1"
             />
           </div>
           <div>
+            <label htmlFor="email" className="font-bold uppercase">
+              Email
+            </label>
             <input
               type="email"
+              id="email"
               placeholder="hello@reallygreatsite.com"
-              className="w-full p-4 rounded-[108px]"
+              className="w-full p-3 rounded-[108px] mt-1"
             />
           </div>
           <div>
+            <label htmlFor="message" className=" font-bold uppercase">
+              Message
+            </label>
             <textarea
+              id="message"
               placeholder="Write your message here"
-              rows={4}
-              className="w-full p-4 rounded-[48px]"
+              rows={3}
+              className="w-full p-3 rounded-[40px] mt-1"
             />
           </div>
           <div className="flex justify-center">
