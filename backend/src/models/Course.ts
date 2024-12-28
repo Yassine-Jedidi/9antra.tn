@@ -14,8 +14,6 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-}, {
-  timestamps: true,
-});
+}, { timestamps: false });
 
 export default mongoose.model('Course', courseSchema); 

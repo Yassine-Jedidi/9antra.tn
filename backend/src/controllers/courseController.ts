@@ -1,13 +1,19 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Course from '../models/Course';
+
+interface MongoError extends Error {
+  code?: number;
+}
 
 // Get all courses
 export const getCourses = async (req: Request, res: Response) => {
   try {
-    const courses = await Course.find({}).sort({ createdAt: -1 });
+    const courses = await Course.find({});
     res.status(200).json(courses);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const mongoError = error as MongoError;
+    res.status(400).json({ error: mongoError.message || 'Error fetching courses' });
   }
 };
 
@@ -21,7 +27,8 @@ export const getCourse = async (req: Request, res: Response) => {
     }
     res.status(200).json(course);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const mongoError = error as MongoError;
+    res.status(400).json({ error: mongoError.message || 'Error fetching course' });
   }
 };
 
@@ -32,7 +39,8 @@ export const createCourse = async (req: Request, res: Response) => {
     const course = await Course.create({ title, price, image });
     res.status(201).json(course);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const mongoError = error as MongoError;
+    res.status(400).json({ error: mongoError.message || 'Error creating course' });
   }
 };
 
@@ -50,7 +58,8 @@ export const updateCourse = async (req: Request, res: Response) => {
     }
     res.status(200).json(course);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const mongoError = error as MongoError;
+    res.status(400).json({ error: mongoError.message || 'Error updating course' });
   }
 };
 
@@ -64,6 +73,7 @@ export const deleteCourse = async (req: Request, res: Response) => {
     }
     res.status(200).json(course);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const mongoError = error as MongoError;
+    res.status(400).json({ error: mongoError.message || 'Error deleting course' });
   }
 }; 
