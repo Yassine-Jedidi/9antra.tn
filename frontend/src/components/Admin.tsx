@@ -240,7 +240,7 @@ const Admin = () => {
                   className="w-full h-48 object-cover rounded-md mb-2"
                 />
                 <h3 className="font-bold">{course.title}</h3>
-                <p className="text-gray-600">{course.price} DT</p>
+                <p className="text-gray-600">{course.price} DT/ Month</p>
                 <div className="mt-2 space-x-2">
                   <button
                     onClick={() => {
