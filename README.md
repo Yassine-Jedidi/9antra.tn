@@ -12,7 +12,7 @@ https://drive.google.com/file/d/1Jmc8S20S3CDGFYJyTHeFn-8IvMh-_hGt/view?usp=shari
 
 - Modern and responsive UI built with React and TypeScript
 - Course catalog with dynamic loading
-- Admin panel for course management
+- Admin panel for course management : *To access, the password is : admin*
 - Contact form for user inquiries (just a dummy form)
 - Responsive design for all devices
 - Image upload and preview functionality
