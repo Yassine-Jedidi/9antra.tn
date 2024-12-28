@@ -2,6 +2,10 @@
 
 A modern web application for managing and displaying online courses built for a technical test for an internship application. Built with React, TypeScript, Node.js, Express, and MongoDB.
 
+## Demo Video
+
+https://drive.google.com/file/d/1Jmc8S20S3CDGFYJyTHeFn-8IvMh-_hGt/view?usp=sharing
+
 ## 🚀 Features
 
 ### Frontend
