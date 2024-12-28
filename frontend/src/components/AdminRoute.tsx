@@ -7,8 +7,8 @@ const AdminRoute = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a simple example. In a real app, you'd want to use proper authentication
-    if (password === "admin123") {
+    // This is a simple example.
+    if (password === "admin") {
       setIsAuthenticated(true);
     } else {
       alert("Invalid password");

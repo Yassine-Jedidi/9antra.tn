@@ -180,7 +180,7 @@ const Admin = () => {
                 onChange={(e) =>
                   setNewCourse({ ...newCourse, title: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
               />
             </div>
@@ -194,7 +194,7 @@ const Admin = () => {
                 onChange={(e) =>
                   setNewCourse({ ...newCourse, price: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 block w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 required
               />
             </div>
@@ -240,7 +240,7 @@ const Admin = () => {
                   className="w-full h-48 object-cover rounded-md mb-2"
                 />
                 <h3 className="font-bold">{course.title}</h3>
-                <p className="text-gray-600">${course.price}</p>
+                <p className="text-gray-600">{course.price} DT</p>
                 <div className="mt-2 space-x-2">
                   <button
                     onClick={() => {
