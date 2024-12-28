@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import courseRoutes from './routes/courses';
 
 // Load environment variables
@@ -13,6 +14,15 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!require('fs').existsSync(uploadsDir)) {
+  require('fs').mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 app.use('/api/courses', courseRoutes);
@@ -28,5 +38,5 @@ mongoose
     });
   })
   .catch((error) => {
-    console.log('Error connecting to MongoDB:', error);
+    console.log('Error connecting to MongoDB:', error.message);
   }); 

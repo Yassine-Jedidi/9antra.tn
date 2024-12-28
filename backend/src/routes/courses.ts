@@ -6,6 +6,7 @@ import {
   updateCourse,
   deleteCourse,
 } from '../controllers/courseController';
+import upload from '../middleware/upload';
 
 const router = express.Router();
 
@@ -16,10 +17,10 @@ router.get('/', getCourses);
 router.get('/:id', getCourse);
 
 // POST a new course
-router.post('/', createCourse);
+router.post('/', upload.single('image'), createCourse);
 
 // UPDATE a course
-router.patch('/:id', updateCourse);
+router.patch('/:id', upload.single('image'), updateCourse);
 
 // DELETE a course
 router.delete('/:id', deleteCourse);

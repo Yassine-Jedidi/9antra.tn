@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, ChangeEvent, useRef } from "react";
+import axios, { AxiosError } from "axios";
 
 interface Course {
   _id: string;
@@ -9,6 +9,7 @@ interface Course {
 }
 
 const Admin = () => {
+  const createFileInputRef = useRef<HTMLInputElement>(null);
   const [courseList, setCourseList] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -19,6 +20,14 @@ const Admin = () => {
     price: "",
     image: "",
   });
+
+  // Create form states
+  const [createFile, setCreateFile] = useState<File | null>(null);
+  const [createPreviewUrl, setCreatePreviewUrl] = useState<string>("");
+
+  // Edit form states
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editPreviewUrl, setEditPreviewUrl] = useState<string>("");
 
   useEffect(() => {
     fetchCourses();
@@ -37,20 +46,67 @@ const Admin = () => {
     }
   };
 
+  const handleCreateFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setCreateFile(file);
+      setCreatePreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleEditFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setEditFile(file);
+      setEditPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newCourse.title && newCourse.price && newCourse.image) {
+    if (newCourse.title && newCourse.price && createFile) {
       try {
         setIsLoading(true);
-        await axios.post("http://localhost:5000/api/courses", newCourse);
+        const formData = new FormData();
+        formData.append("title", newCourse.title);
+        formData.append("price", newCourse.price);
+        formData.append("image", createFile);
+
+        console.log("Sending form data:", {
+          title: newCourse.title,
+          price: newCourse.price,
+          file: createFile.name,
+        });
+
+        const response = await axios.post(
+          "http://localhost:5000/api/courses",
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        console.log("Server response:", response.data);
         await fetchCourses();
         setNewCourse({ title: "", price: "", image: "" });
+        setCreateFile(null);
+        setCreatePreviewUrl("");
+        setError(null);
+        // Reset the file input
+        if (createFileInputRef.current) {
+          createFileInputRef.current.value = "";
+        }
       } catch (err) {
-        setError("Failed to create course");
-        console.error(err);
+        const error = err as AxiosError<{ error: string }>;
+        console.error("Error details:", error.response?.data || error);
+        setError(error.response?.data?.error || "Failed to create course");
       } finally {
         setIsLoading(false);
       }
+    } else {
+      setError("Please fill in all fields and select an image");
     }
   };
 
@@ -59,12 +115,26 @@ const Admin = () => {
     if (selectedCourse) {
       try {
         setIsLoading(true);
+        const formData = new FormData();
+        formData.append("title", selectedCourse.title);
+        formData.append("price", selectedCourse.price);
+        if (editFile) {
+          formData.append("image", editFile);
+        }
+
         await axios.patch(
           `http://localhost:5000/api/courses/${selectedCourse._id}`,
-          selectedCourse
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
         );
         await fetchCourses();
         setSelectedCourse(null);
+        setEditFile(null);
+        setEditPreviewUrl("");
         setIsEditing(false);
       } catch (err) {
         setError("Failed to update course");
@@ -97,227 +167,190 @@ const Admin = () => {
         </ul>
       </nav>
       <main className="flex-1 p-8">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Create New Course</h2>
+          <form onSubmit={handleCreateCourse} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Title
+              </label>
+              <input
+                type="text"
+                value={newCourse.title}
+                onChange={(e) =>
+                  setNewCourse({ ...newCourse, title: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Price
+              </label>
+              <input
+                type="text"
+                value={newCourse.price}
+                onChange={(e) =>
+                  setNewCourse({ ...newCourse, price: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Image
+              </label>
+              <input
+                ref={createFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCreateFileChange}
+                className="mt-1 block w-full"
+                required
+              />
+              {createPreviewUrl && (
+                <img
+                  src={createPreviewUrl}
+                  alt="Preview"
+                  className="mt-2 h-32 w-32 object-cover rounded-md"
+                />
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+            >
+              {isLoading ? "Creating..." : "Create Course"}
+            </button>
+          </form>
+        </div>
+
         <div>
-          <h2 className="text-2xl font-bold mb-6">Course Management</h2>
-
-          {/* Create New Course */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold mb-4">Add New Course</h3>
-            <form onSubmit={handleCreateCourse} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={newCourse.title}
-                  onChange={(e) =>
-                    setNewCourse({ ...newCourse, title: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+          <h2 className="text-2xl font-bold mb-4">Course List</h2>
+          {error && <div className="text-red-500 mb-4">{error}</div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courseList.map((course) => (
+              <div key={course._id} className="border rounded-lg p-4 shadow-sm">
+                <img
+                  src={`http://localhost:5000${course.image}`}
+                  alt={course.title}
+                  className="w-full h-48 object-cover rounded-md mb-2"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Price
-                </label>
-                <input
-                  type="text"
-                  value={newCourse.price}
-                  onChange={(e) =>
-                    setNewCourse({ ...newCourse, price: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={newCourse.image}
-                  onChange={(e) =>
-                    setNewCourse({ ...newCourse, image: e.target.value })
-                  }
-                  className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Image Upload
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const imageUrl = reader.result as string;
-                        setNewCourse({ ...newCourse, image: imageUrl });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="mt-1 block w-full"
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-[#C1316D] text-white px-4 py-2 rounded-md hover:bg-[#A12759]"
-              >
-                Create Course
-              </button>
-            </form>
-          </div>
-
-          {/* Course List */}
-          <div>
-            <h3 className="text-xl font-semibold mb-4">Existing Courses</h3>
-            {error && <div className="text-red-500 mb-4">{error}</div>}
-            {isLoading ? (
-              <div>Loading...</div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {courseList.map((course) => (
-                  <div
-                    key={course._id}
-                    className="border rounded-lg p-4 flex justify-between items-center"
+                <h3 className="font-bold">{course.title}</h3>
+                <p className="text-gray-600">${course.price}</p>
+                <div className="mt-2 space-x-2">
+                  <button
+                    onClick={() => {
+                      setSelectedCourse(course);
+                      setIsEditing(true);
+                    }}
+                    className="bg-yellow-500 text-white px-2 py-1 rounded"
                   >
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={course.image}
-                        alt={course.title}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                      <div>
-                        <h4 className="font-semibold">{course.title}</h4>
-                        <p className="text-gray-600">{course.price}</p>
-                      </div>
-                    </div>
-                    <div className="space-x-2">
-                      <button
-                        onClick={() => {
-                          setSelectedCourse(course);
-                          setIsEditing(true);
-                        }}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteCourse(course._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCourse(course._id)}
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            )}
+            ))}
           </div>
+        </div>
 
-          {/* Edit Course Modal */}
-          {isEditing && selectedCourse && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <div className="bg-white p-6 rounded-lg w-96">
-                <h3 className="text-xl font-semibold mb-4">Edit Course</h3>
-                <form onSubmit={handleUpdateCourse} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedCourse.title}
-                      onChange={(e) =>
-                        setSelectedCourse({
-                          ...selectedCourse,
-                          title: e.target.value,
-                        })
-                      }
-                      className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+        {isEditing && selectedCourse && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-8 rounded-lg w-96">
+              <h2 className="text-2xl font-bold mb-4">Edit Course</h2>
+              <form onSubmit={handleUpdateCourse} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedCourse.title}
+                    onChange={(e) =>
+                      setSelectedCourse({
+                        ...selectedCourse,
+                        title: e.target.value,
+                      })
+                    }
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Price
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedCourse.price}
+                    onChange={(e) =>
+                      setSelectedCourse({
+                        ...selectedCourse,
+                        price: e.target.value,
+                      })
+                    }
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEditFileChange}
+                    className="mt-1 block w-full"
+                  />
+                  {editPreviewUrl ? (
+                    <img
+                      src={editPreviewUrl}
+                      alt="Preview"
+                      className="mt-2 h-32 w-32 object-cover rounded-md"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Price
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedCourse.price}
-                      onChange={(e) =>
-                        setSelectedCourse({
-                          ...selectedCourse,
-                          price: e.target.value,
-                        })
-                      }
-                      className="mt-1 block w-full rounded-md border border-gray-300 p-2"
+                  ) : (
+                    <img
+                      src={`http://localhost:5000${selectedCourse.image}`}
+                      alt={selectedCourse.title}
+                      className="mt-2 h-32 w-32 object-cover rounded-md"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedCourse.image}
-                      onChange={(e) =>
-                        setSelectedCourse({
-                          ...selectedCourse,
-                          image: e.target.value,
-                        })
-                      }
-                      className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Image Upload
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            const imageUrl = reader.result as string;
-                            setSelectedCourse({
-                              ...selectedCourse,
-                              image: imageUrl,
-                            });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="mt-1 block w-full"
-                    />
-                  </div>
+                  )}
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCourse(null);
+                      setIsEditing(false);
+                      setEditFile(null);
+                      setEditPreviewUrl("");
+                    }}
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
-                    className="bg-[#C1316D] text-white px-4 py-2 rounded-md hover:bg-[#A12759]"
+                    disabled={isLoading}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
                   >
-                    Update Course
+                    {isLoading ? "Updating..." : "Update Course"}
                   </button>
-                </form>
-                <button
-                  onClick={() => {
-                    setSelectedCourse(null);
-                    setIsEditing(false);
-                  }}
-                  className="mt-4 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </button>
-              </div>
+                </div>
+              </form>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );
